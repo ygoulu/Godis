@@ -39,7 +39,7 @@ func handleConn(conn net.Conn) {
 	}
 
 	// Respond with a pong
-	_, err = conn.Write([]byte("pong"))
+	_, err = conn.Write([]byte("+PONG\r\n"))
 	if err != nil {
 		log.Println("Error writing to connection:", err)
 		return
