@@ -1,27 +1,29 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
+	"os"
 )
 
 func main() {
-	listener, err := net.Listen("tcp", ":8080")
+	// You can use print statements as follows for debugging, they'll be visible when running tests.
+	fmt.Println("Logs from your program will appear here!")
+
+	// Uncomment this block to pass the first stage
+
+	l, err := net.Listen("tcp", "0.0.0.0:6379")
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Failed to bind to port 6379")
+		os.Exit(1)
 	}
-	defer listener.Close()
-
-	log.Println("Server listening on port 8080")
-
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			log.Println("Error accepting connection:", err)
-			continue
-		}
-		go handleConn(conn)
+	connection, err := l.Accept()
+	if err != nil {
+		fmt.Println("Error accepting connection: ", err.Error())
+		os.Exit(1)
 	}
+	handleConn(connection)
 }
 
 func handleConn(conn net.Conn) {
@@ -30,29 +32,18 @@ func handleConn(conn net.Conn) {
 
 	// Read the request from the connection
 	buf := make([]byte, 1024)
-	n, err := conn.Read(buf)
+	_, err := conn.Read(buf)
 	if err != nil {
 		log.Println("Error reading from connection:", err)
 		return
 	}
-	request := string(buf[:n])
 
-	// Check if the request is a ping
-	if request == "ping" {
-		// Respond with a pong
-		_, err = conn.Write([]byte("pong"))
-		if err != nil {
-			log.Println("Error writing to connection:", err)
-			return
-		}
-		log.Println("Sent pong response")
-	} else {
-		// Respond with an error for unrecognized requests
-		_, err = conn.Write([]byte("Error: Unrecognized request"))
-		if err != nil {
-			log.Println("Error writing to connection:", err)
-			return
-		}
-		log.Println("Sent error response for unrecognized request")
+	// Respond with a pong
+	_, err = conn.Write([]byte("pong"))
+	if err != nil {
+		log.Println("Error writing to connection:", err)
+		return
 	}
+	log.Println("Sent pong response")
+
 }
