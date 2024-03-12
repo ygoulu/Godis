@@ -19,34 +19,33 @@ func main() {
 		os.Exit(1)
 	}
 
-	for {
-		connection, err := l.Accept()
-		if err != nil {
-			fmt.Println("Error accepting connection: ", err.Error())
-			os.Exit(1)
-		}
-		go handleConn(connection)
+	connection, err := l.Accept()
+	if err != nil {
+		fmt.Println("Error accepting connection: ", err.Error())
+		os.Exit(1)
 	}
+	handleConn(connection)
 }
 
 func handleConn(conn net.Conn) {
 	defer conn.Close()
 	log.Println("New connection from", conn.RemoteAddr())
 
-	// Read the request from the connection
-	buf := make([]byte, 1024)
-	_, err := conn.Read(buf)
-	if err != nil {
-		log.Println("Error reading from connection:", err)
-		return
-	}
+	for {
+		// Read the request from the connection
+		buf := make([]byte, 1024)
+		_, err := conn.Read(buf)
+		if err != nil {
+			log.Println("Error reading from connection:", err)
+			return
+		}
 
-	// Respond with a pong
-	_, err = conn.Write([]byte("+PONG\r\n"))
-	if err != nil {
-		log.Println("Error writing to connection:", err)
-		return
+		// Respond with a pong
+		_, err = conn.Write([]byte("+PONG\r\n"))
+		if err != nil {
+			log.Println("Error writing to connection:", err)
+			return
+		}
+		log.Println("Sent pong response")
 	}
-	log.Println("Sent pong response")
-
 }
