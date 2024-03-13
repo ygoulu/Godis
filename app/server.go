@@ -47,11 +47,12 @@ func eventLoop() {
 	for {
 		e := <-eventQueue
 		e.conn.Write([]byte("+PONG\r\n"))
-		e.conn.Close()
 	}
 }
 
 func handleConn(conn net.Conn) {
+	defer conn.Close()
+
 	log.Println("New connection from", conn.RemoteAddr())
 
 	// Read the request from the connection
