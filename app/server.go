@@ -55,13 +55,15 @@ func handleConn(conn net.Conn) {
 
 	log.Println("New connection from", conn.RemoteAddr())
 
-	// Read the request from the connection
-	buf := make([]byte, 1024)
-	n, err := conn.Read(buf)
-	if err != nil {
-		log.Println("Error reading from connection:", err)
-		return
-	}
+	for {
+		// Read the request from the connection
+		buf := make([]byte, 1024)
+		n, err := conn.Read(buf)
+		if err != nil {
+			log.Println("Error reading from connection:", err)
+			return
+		}
 
-	eventQueue <- event{conn, buf[:n]}
+		eventQueue <- event{conn, buf[:n]}
+	}
 }
