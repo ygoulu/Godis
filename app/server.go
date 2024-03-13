@@ -7,6 +7,13 @@ import (
 	"os"
 )
 
+type event struct {
+	conn    net.Conn
+	command []byte
+}
+
+var eventQueue = make(chan event)
+
 func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Println("Logs from your program will appear here!")
@@ -18,34 +25,42 @@ func main() {
 		fmt.Println("Failed to bind to port 6379")
 		os.Exit(1)
 	}
+	defer l.Close()
 
-	connection, err := l.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
+	go func() {
+		for {
+			connection, err := l.Accept()
+			if err != nil {
+				fmt.Println("Error accepting connection: ", err.Error())
+				continue
+			}
+
+			go handleConn(connection)
+		}
+	}()
+
+	//recieve executions of the event loop
+	eventLoop()
+}
+
+func eventLoop() {
+	for {
+		e := <-eventQueue
+		e.conn.Write([]byte("+PONG\r\n"))
+		e.conn.Close()
 	}
-	handleConn(connection)
 }
 
 func handleConn(conn net.Conn) {
-	defer conn.Close()
 	log.Println("New connection from", conn.RemoteAddr())
 
-	for {
-		// Read the request from the connection
-		buf := make([]byte, 1024)
-		_, err := conn.Read(buf)
-		if err != nil {
-			log.Println("Error reading from connection:", err)
-			return
-		}
-
-		// Respond with a pong
-		_, err = conn.Write([]byte("+PONG\r\n"))
-		if err != nil {
-			log.Println("Error writing to connection:", err)
-			return
-		}
-		log.Println("Sent pong response")
+	// Read the request from the connection
+	buf := make([]byte, 1024)
+	n, err := conn.Read(buf)
+	if err != nil {
+		log.Println("Error reading from connection:", err)
+		return
 	}
+
+	eventQueue <- event{conn, buf[:n]}
 }
